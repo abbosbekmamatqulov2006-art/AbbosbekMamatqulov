@@ -27,4 +27,4 @@
 ---
 
 ### 📫 Connect with Me
-[LinkedIn](#) • [GitHub](https://github.com/MamatqulovAbbosbek) • [Email](mailto:abbosbek@example.com)
+[LinkedIn](https://www.linkedin.com/in/abbosbek-mamatqulov-06analyst/) • [GitHub](https://github.com/abbosbekmamatqulov2006-art) • [Email](abbosbekmamatqulov2006@gmail.com)
