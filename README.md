@@ -95,9 +95,9 @@ I am actively building my expertise in Data Analytics and Business Intelligence 
 
 ## 📫 Let's Connect
 
-LinkedIn: [www.linkedin.com/in/abbosbek-mamatqulov](http://www.linkedin.com/in/abbosbek-mamatqulov)
+LinkedIn: www.linkedin.com/in/abbosbek-mamatqulov-06analyst
 
-Email: [your-email@example.com](mailto:your-email@example.com)
+Email: abbosbekmamatqulov2006@gmail.com
 
 ---
 
