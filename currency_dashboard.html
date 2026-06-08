@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valyuta Kurslari Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161b27;
+  --bg3: #1e2535;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --text2: #8b91a8;
+  --text3: #555e75;
+  --accent: #4f8ef7;
+  --accent2: #7c6af5;
+  --green: #34d399;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --green-bg: rgba(52,211,153,0.1);
+  --red-bg: rgba(248,113,113,0.1);
+  --amber-bg: rgba(251,191,36,0.08);
+  --card-radius: 14px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh;overflow-x:hidden}
+.app{display:grid;grid-template-rows:auto auto 1fr;min-height:100vh}
+
+/* HEADER */
+.header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:10px}
+.lang-switcher{display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border)}
+.lang-btn{padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--text2);border:none;background:none;font-family:var(--font)}
+.lang-btn.active{background:var(--accent);color:#fff}
+.last-update{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.refresh-btn{width:30px;height:30px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:16px;transition:all .2s}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent);transform:rotate(90deg)}
+
+/* FILTERS */
+.filters{padding:12px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;overflow-x:auto;background:var(--bg)}
+.filter-label{font-size:11px;color:var(--text3);font-weight:500;white-space:nowrap}
+.currency-pills{display:flex;gap:6px}
+.pill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border);color:var(--text2);background:none;white-space:nowrap;font-family:var(--font)}
+.pill.active{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,0.1)}
+.pill:hover:not(.active){border-color:var(--border2);color:var(--text)}
+.sep{width:1px;height:24px;background:var(--border);flex-shrink:0}
+.range-btns{display:flex;gap:4px}
+.range-btn{padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:none;font-family:var(--font);transition:all .15s}
+.range-btn.active{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.range-btn:hover:not(.active){border-color:var(--border2)}
+
+/* MAIN CONTENT */
+.main{padding:20px 24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-radius);padding:16px 18px;transition:border-color .2s}
+.kpi-card:hover{border-color:var(--border2)}
+.kpi-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.kpi-val{font-size:26px;font-weight:600;letter-spacing:-1px;color:var(--text);margin-bottom:6px;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:12px;display:flex;align-items:center;gap:6px}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.up{background:var(--green-bg);color:var(--green)}
+.badge.dn{background:var(--red-bg);color:var(--red)}
+.badge.neu{background:var(--amber-bg);color:var(--amber)}
+
+/* CHARTS GRID */
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-radius);padding:18px;transition:border-color .2s}
+.chart-card:hover{border-color:var(--border2)}
+.chart-card.full{grid-column:1/-1}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px}
+.card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.chart-wrap{position:relative}
+
+/* TABLE */
+.rates-table{width:100%;border-collapse:collapse}
+.rates-table th{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.rates-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px}
+.rates-table tr:last-child td{border-bottom:none}
+.rates-table tr{transition:background .1s;cursor:pointer}
+.rates-table tr:hover td{background:var(--bg3)}
+.rates-table tr.selected td{background:rgba(79,142,247,0.08)}
+.cur-cell{display:flex;align-items:center;gap:8px}
+.cur-flag{font-size:16px;line-height:1}
+.cur-code{font-weight:600;font-family:var(--mono);font-size:12px}
+.cur-name{font-size:11px;color:var(--text3)}
+.rate-val{font-family:var(--mono);font-size:13px;font-weight:500}
+.mini-bar-wrap{display:flex;align-items:center;gap:6px}
+.mini-bar-bg{flex:1;height:3px;background:var(--bg3);border-radius:2px;max-width:60px}
+.mini-bar-fill{height:3px;border-radius:2px}
+
+/* BOTTOM ROW */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+
+/* TOOLTIP */
+.tooltip-custom{background:var(--bg3)!important;border:1px solid var(--border2)!important;border-radius:8px!important;color:var(--text)!important;font-family:var(--font)!important;font-size:12px!important;padding:8px 12px!important}
+
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.spark{font-size:20px;opacity:.6}
+.trend-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)}
+.trend-row:last-child{border-bottom:none}
+.trend-name{font-size:12px;color:var(--text2)}
+.trend-bar-wrap{flex:1;margin:0 10px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.trend-bar-inner{height:4px;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">💱</div>
+    <div>
+      <div class="logo-text" id="appTitle">Valyuta Kurslari</div>
+      <div class="logo-sub" id="appSub">Real-time monitoring</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="setLang('uz')">UZ</button>
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+    <div class="last-update" id="lastUpdate"></div>
+    <div class="refresh-btn" onclick="refreshData()" title="Yangilash">↻</div>
+  </div>
+</header>
+
+<!-- FILTERS -->
+<div class="filters">
+  <span class="filter-label" id="lblCurrency">Valyuta:</span>
+  <div class="currency-pills" id="currencyPills"></div>
+  <div class="sep"></div>
+  <span class="filter-label" id="lblPeriod">Davr:</span>
+  <div class="range-btns">
+    <button class="range-btn" onclick="setRange(7)" id="r7">7 kun</button>
+    <button class="range-btn active" onclick="setRange(30)" id="r30">30 kun</button>
+    <button class="range-btn" onclick="setRange(60)" id="r60">60 kun</button>
+    <button class="range-btn" onclick="setRange(128)" id="r128">Hammasi</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- KPI -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">💰 <span id="kpi1Label">Joriy kurs</span></div>
+      <div class="kpi-val" id="kpiRate">—</div>
+      <div class="kpi-sub"><span class="badge" id="kpiBadge">—</span> <span id="kpiSub" style="color:var(--text3)"></span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">📈 <span id="kpi2Label">Haftalik</span></div>
+      <div class="kpi-val" id="kpiWeek">—</div>
+      <div class="kpi-sub"><span style="color:var(--text3)" id="kpiWeekSub">UZS</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">📅 <span id="kpi3Label">Oylik</span></div>
+      <div class="kpi-val" id="kpiMonth">—</div>
+      <div class="kpi-sub"><span style="color:var(--text3)" id="kpiMonthSub">UZS</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">📊 <span id="kpi4Label">Diapazoni</span></div>
+      <div class="kpi-val" id="kpiRange">—</div>
+      <div class="kpi-sub"><span style="color:var(--text3)" id="kpiRangeSub">Min — Maks</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN CHARTS ROW -->
+  <div class="charts-grid">
+    <!-- Line chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="lineTitle">Kurs dinamikasi</div>
+          <div class="card-sub" id="lineSub">Tanlangan davr uchun kurs o'zgarishi</div>
+        </div>
+        <span class="badge up" id="lineTrend">↑</span>
+      </div>
+      <div class="chart-wrap"><canvas id="lineChart" height="200"></canvas></div>
+    </div>
+    <!-- Donut chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="donutTitle">Valyuta taqsimoti</div>
+          <div class="card-sub" id="donutSub">Joriy kurs nisbati</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="donutChart" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <!-- MIDDLE ROW -->
+  <div class="charts-grid">
+    <!-- Bar chart - daily changes -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="barTitle">Kunlik o'zgarishlar</div>
+          <div class="card-sub" id="barSub">UZS da farq (+/-)</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="barChart" height="180"></canvas></div>
+    </div>
+    <!-- Multi-line comparison -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="compareTitle">Solishtirma trend</div>
+          <div class="card-sub" id="compareSub">Barcha valyutalar (normaliz.)</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="compareChart" height="180"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLE + SIDE CHARTS -->
+  <div class="charts-grid">
+    <!-- Table -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div class="card-title" id="tableTitle">Barcha valyutalar</div>
+      </div>
+      <table class="rates-table" id="ratesTable">
+        <thead>
+          <tr>
+            <th id="thCurrency">Valyuta</th>
+            <th id="thRate">Kurs (UZS)</th>
+            <th id="thChange">O'zgarish</th>
+            <th id="thWeek">Haftalik</th>
+            <th id="thBar">Grafik</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <!-- Side charts stacked -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <!-- Volatillik -->
+      <div class="chart-card" style="flex:1">
+        <div class="card-header">
+          <div>
+            <div class="card-title" id="volTitle">Volatillik</div>
+            <div class="card-sub" id="volSub">O'zgaruvchanlik darajasi</div>
+          </div>
+        </div>
+        <div id="volatilityBars"></div>
+      </div>
+      <!-- Area chart -->
+      <div class="chart-card" style="flex:1">
+        <div class="card-header">
+          <div class="card-title" id="areaTitle">To'ldirilgan trend</div>
+        </div>
+        <div class="chart-wrap"><canvas id="areaChart" height="120"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-grid">
+    <!-- Monthly avg -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div class="card-title" id="monthTitle">Oylik o'rtacha</div>
+      </div>
+      <div class="chart-wrap"><canvas id="monthChart" height="160"></canvas></div>
+    </div>
+    <!-- Scatter -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div class="card-title" id="scatterTitle">Risk vs O'zgarish</div>
+      </div>
+      <div class="chart-wrap"><canvas id="scatterChart" height="160"></canvas></div>
+    </div>
+    <!-- Waterfall -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div class="card-title" id="waterfallTitle">Kumulyativ o'zgarish</div>
+      </div>
+      <div class="chart-wrap"><canvas id="waterfallChart" height="160"></canvas></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA GENERATION
+// ═══════════════════════════════════════════
+const BASE_CURRENCIES = {
+  USD:{rate:12756,en:'US Dollar',uz:'AQSH dollari',ru:'Доллар США',flag:'🇺🇸',color:'#4f8ef7'},
+  EUR:{rate:14132,en:'Euro',uz:'Evro',ru:'Евро',flag:'🇪🇺',color:'#7c6af5'},
+  RUB:{rate:154.5,en:'Russian Ruble',uz:'Rossiya rubli',ru:'Российский рубль',flag:'🇷🇺',color:'#e05c5c'},
+  GBP:{rate:16890,en:'British Pound',uz:'Britaniya funt sterlingi',ru:'Фунт стерлинга',flag:'🇬🇧',color:'#34d399'},
+  JPY:{rate:89.2,en:'Japanese Yen',uz:'Yaponiya iyenasi',ru:'Японская иена',flag:'🇯🇵',color:'#fb7185'},
+  CNY:{rate:1762,en:'Chinese Yuan',uz:'Xitoy yuani',ru:'Китайский юань',flag:'🇨🇳',color:'#fbbf24'},
+  KZT:{rate:25.8,en:'Kazakhstani Tenge',uz:'Qozogiston tengesi',ru:'Казахстанский тенге',flag:'🇰🇿',color:'#38bdf8'},
+  TRY:{rate:335.8,en:'Turkish Lira',uz:'Turk lirasi',ru:'Турецкая лира',flag:'🇹🇷',color:'#f97316'},
+  CHF:{rate:14250,en:'Swiss Franc',uz:'Shveytsariya franki',ru:'Швейцарский франк',flag:'🇨🇭',color:'#a78bfa'},
+  AED:{rate:3472,en:'UAE Dirham',uz:'BAA dirhami',ru:'Дирхам ОАЭ',flag:'🇦🇪',color:'#2dd4bf'},
+  SAR:{rate:3401,en:'Saudi Riyal',uz:'Saudiya riyoli',ru:'Саудовский риял',flag:'🇸🇦',color:'#86efac'},
+};
+const VOL={USD:.0025,EUR:.003,RUB:.006,GBP:.0035,JPY:.003,CNY:.0025,KZT:.003,TRY:.007,CHF:.0025,AED:.002,SAR:.002};
+
+function seededRand(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return((s>>>0)/0xffffffff)-.5}}
+
+function generateData(){
+  const dates=[],allData={};
+  const today=new Date('2026-06-08');
+  for(let d=179;d>=0;d--){
+    const dt=new Date(today);dt.setDate(dt.getDate()-d);
+    if(dt.getDay()===0||dt.getDay()===6)continue;
+    dates.push(dt.toISOString().slice(0,10));
+  }
+  Object.entries(BASE_CURRENCIES).forEach(([code,info])=>{
+    const rand=seededRand(code.charCodeAt(0)*7+code.charCodeAt(1)*13);
+    let cur=info.rate;const arr=[];
+    dates.forEach(()=>{
+      const chg=(rand()*2)*VOL[code]+0.0001;
+      cur*=(1+chg);
+      arr.push({r:+cur.toFixed(2),d:+(cur*chg).toFixed(2),p:+(chg*100).toFixed(4)});
+    });
+    allData[code]=arr;
+  });
+  return{dates,data:allData};
+}
+
+const DB=generateData();
+let currentCcy='USD',currentRange=30,currentLang='uz';
+
+// ═══════════════════════════════════════════
+// I18N
+// ═══════════════════════════════════════════
+const T={
+  uz:{appTitle:'Valyuta Kurslari',appSub:'Real-time monitoring',lblCurrency:'Valyuta:',lblPeriod:'Davr:',
+      kpi1:'Joriy kurs',kpi2:'Haftalik',kpi3:'Oylik',kpi4:'Diapazoni',
+      lineTitle:'Kurs dinamikasi',lineSub:'Tanlangan davr',donutTitle:"Valyuta taqsimoti",donutSub:'Joriy kurs nisbati',
+      barTitle:"Kunlik o'zgarishlar",barSub:"UZS da farq (+/-)",compareTitle:'Solishtirma trend',compareSub:'Barcha valyutalar (normaliz.)',
+      tableTitle:'Barcha valyutalar',thCurrency:'Valyuta',thRate:'Kurs (UZS)',thChange:"O'zgarish",thWeek:'Haftalik',thBar:'Grafik',
+      volTitle:'Volatillik',volSub:"O'zgaruvchanlik",areaTitle:"To'ldirilgan trend",
+      monthTitle:"Oylik o'rtacha",scatterTitle:'Risk vs O\'zgarish',waterfallTitle:"Kumulyativ o'zgarish",
+      r7:'7 kun',r30:'30 kun',r60:'60 kun',rAll:'Hammasi',updated:'Yangilangan:'},
+  ru:{appTitle:'Курсы Валют',appSub:'Мониторинг в реальном времени',lblCurrency:'Валюта:',lblPeriod:'Период:',
+      kpi1:'Текущий курс',kpi2:'Неделя',kpi3:'Месяц',kpi4:'Диапазон',
+      lineTitle:'Динамика курса',lineSub:'За выбранный период',donutTitle:'Доли валют',donutSub:'Текущий курс',
+      barTitle:'Дневные изменения',barSub:'Разница в UZS (+/-)',compareTitle:'Сравнительный тренд',compareSub:'Все валюты (норм.)',
+      tableTitle:'Все валюты',thCurrency:'Валюта',thRate:'Курс (UZS)',thChange:'Изменение',thWeek:'Неделя',thBar:'График',
+      volTitle:'Волатильность',volSub:'Уровень изменчивости',areaTitle:'Заполненный тренд',
+      monthTitle:'Среднемесячное',scatterTitle:'Риск vs Изменение',waterfallTitle:'Накопленное изменение',
+      r7:'7 дней',r30:'30 дней',r60:'60 дней',rAll:'Всё',updated:'Обновлено:'},
+  en:{appTitle:'Exchange Rates',appSub:'Real-time monitoring',lblCurrency:'Currency:',lblPeriod:'Period:',
+      kpi1:'Current rate',kpi2:'Weekly',kpi3:'Monthly',kpi4:'Range',
+      lineTitle:'Rate dynamics',lineSub:'For selected period',donutTitle:'Currency shares',donutSub:'Current rate ratio',
+      barTitle:'Daily changes',barSub:'Diff in UZS (+/-)',compareTitle:'Comparative trend',compareSub:'All currencies (norm.)',
+      tableTitle:'All currencies',thCurrency:'Currency',thRate:'Rate (UZS)',thChange:'Change',thWeek:'Weekly',thBar:'Chart',
+      volTitle:'Volatility',volSub:'Change level',areaTitle:'Area trend',
+      monthTitle:'Monthly average',scatterTitle:'Risk vs Change',waterfallTitle:'Cumulative change',
+      r7:'7 days',r30:'30 days',r60:'60 days',rAll:'All',updated:'Updated:'},
+};
+
+function t(key){return T[currentLang][key]||key}
+function getName(code){const c=BASE_CURRENCIES[code];return currentLang==='uz'?c.uz:currentLang==='ru'?c.ru:c.en}
+
+// ═══════════════════════════════════════════
+// CHART DEFAULTS
+// ═══════════════════════════════════════════
+Chart.defaults.color='#8b91a8';
+Chart.defaults.font.family='DM Sans';
+Chart.defaults.font.size=11;
+const gridColor='rgba(255,255,255,0.04)';
+const chartDefaults={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2535',titleColor:'#e8eaf0',bodyColor:'#8b91a8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:10,cornerRadius:8}},scales:{x:{grid:{color:gridColor,drawBorder:false},ticks:{maxTicksLimit:8,maxRotation:0}},y:{grid:{color:gridColor,drawBorder:false},ticks:{maxTicksLimit:5}}}};
+
+// ═══════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════
+let charts={};
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function getSlice(){
+  const n=DB.dates.length;
+  const start=Math.max(0,n-currentRange);
+  return{dates:DB.dates.slice(start),data:{}};
+}
+
+function buildLineChart(){
+  destroyChart('line');
+  const sl=getSlice();
+  const cData=DB.data[currentCcy].slice(-currentRange);
+  const color=BASE_CURRENCIES[currentCcy].color;
+  const ctx=document.getElementById('lineChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,color+'40');grad.addColorStop(1,color+'00');
+  charts.line=new Chart(ctx,{type:'line',data:{labels:DB.dates.slice(-currentRange).map(d=>d.slice(5)),datasets:[{data:cData.map(d=>d.r),borderColor:color,borderWidth:2,fill:true,backgroundColor:grad,tension:.4,pointRadius:0,pointHoverRadius:4}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:ctx=>`${currentCcy}: ${ctx.parsed.y.toLocaleString()} UZS`}}}}});
+}
+
+function buildDonutChart(){
+  destroyChart('donut');
+  const codes=Object.keys(BASE_CURRENCIES);
+  const vals=codes.map(c=>DB.data[c][DB.data[c].length-1].r);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const top5idx=[...vals.map((v,i)=>({v,i}))].sort((a,b)=>b.v-a.v).slice(0,6).map(x=>x.i);
+  const ctx=document.getElementById('donutChart').getContext('2d');
+  charts.donut=new Chart(ctx,{type:'doughnut',data:{labels:top5idx.map(i=>codes[i]),datasets:[{data:top5idx.map(i=>vals[i]),backgroundColor:top5idx.map(i=>BASE_CURRENCIES[codes[i]].color),borderColor:'#161b27',borderWidth:2,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:true,position:'right',labels:{color:'#8b91a8',font:{size:11},padding:8,boxWidth:10,boxHeight:10}},tooltip:{backgroundColor:'#1e2535',titleColor:'#e8eaf0',bodyColor:'#8b91a8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:ctx=>`${ctx.label}: ${((ctx.parsed/total)*100).toFixed(1)}%`}}}}});
+}
+
+function buildBarChart(){
+  destroyChart('bar');
+  const cData=DB.data[currentCcy].slice(-Math.min(currentRange,30));
+  const dates=DB.dates.slice(-Math.min(currentRange,30));
+  const ctx=document.getElementById('barChart').getContext('2d');
+  charts.bar=new Chart(ctx,{type:'bar',data:{labels:dates.map(d=>d.slice(5)),datasets:[{data:cData.map(d=>d.d),backgroundColor:cData.map(d=>d.d>=0?'rgba(52,211,153,0.7)':'rgba(248,113,113,0.7)'),borderRadius:2,borderSkipped:false}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:ctx=>`${ctx.parsed.y>0?'+':''}${ctx.parsed.y.toFixed(2)} UZS`}}}}});
+}
+
+function buildCompareChart(){
+  destroyChart('compare');
+  const codes=Object.keys(BASE_CURRENCIES).slice(0,5);
+  const n=Math.min(currentRange,60);
+  const ctx=document.getElementById('compareChart').getContext('2d');
+  const datasets=codes.map(code=>{
+    const raw=DB.data[code].slice(-n);
+    const base=raw[0].r;
+    return{label:code,data:raw.map(d=>((d.r-base)/base*100).toFixed(3)),borderColor:BASE_CURRENCIES[code].color,borderWidth:1.5,fill:false,tension:.4,pointRadius:0};
+  });
+  charts.compare=new Chart(ctx,{type:'line',data:{labels:DB.dates.slice(-n).map(d=>d.slice(5)),datasets},options:{...chartDefaults,plugins:{legend:{display:true,labels:{color:'#8b91a8',font:{size:10},boxWidth:12,padding:8}},tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y>0?'+':''}${ctx.parsed.y}%`}}}}});
+}
+
+function buildAreaChart(){
+  destroyChart('area');
+  const cData=DB.data[currentCcy].slice(-currentRange);
+  const color=BASE_CURRENCIES[currentCcy].color;
+  const ctx=document.getElementById('areaChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,120);
+  grad.addColorStop(0,color+'50');grad.addColorStop(1,color+'05');
+  charts.area=new Chart(ctx,{type:'line',data:{labels:DB.dates.slice(-currentRange).map(d=>d.slice(5)),datasets:[{data:cData.map(d=>d.r),borderColor:color,borderWidth:1.5,fill:true,backgroundColor:grad,tension:.3,pointRadius:0}]},options:{...chartDefaults,scales:{x:{display:false},y:{grid:{color:gridColor,drawBorder:false},ticks:{maxTicksLimit:3}}},plugins:{...chartDefaults.plugins}}});
+}
+
+function buildMonthChart(){
+  destroyChart('month');
+  const monthMap={};
+  DB.dates.slice(-currentRange).forEach((d,i)=>{
+    const m=d.slice(0,7);
+    const idx=DB.dates.length-currentRange+i;
+    if(!monthMap[m])monthMap[m]=[];
+    monthMap[m].push(DB.data[currentCcy][idx].r);
+  });
+  const months=Object.keys(monthMap);
+  const avgs=months.map(m=>+(monthMap[m].reduce((a,b)=>a+b,0)/monthMap[m].length).toFixed(0));
+  const color=BASE_CURRENCIES[currentCcy].color;
+  const ctx=document.getElementById('monthChart').getContext('2d');
+  charts.month=new Chart(ctx,{type:'bar',data:{labels:months.map(m=>m.slice(5)),datasets:[{data:avgs,backgroundColor:color+'80',borderColor:color,borderWidth:1,borderRadius:4}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:ctx=>`O'rtacha: ${ctx.parsed.y.toLocaleString()} UZS`}}}}});
+}
+
+function buildScatterChart(){
+  destroyChart('scatter');
+  const codes=Object.keys(BASE_CURRENCIES);
+  const points=codes.map(code=>{
+    const d=DB.data[code].slice(-30);
+    const vol=Math.sqrt(d.map(x=>x.p*x.p).reduce((a,b)=>a+b,0)/d.length);
+    const avg=d.map(x=>x.p).reduce((a,b)=>a+b,0)/d.length;
+    return{x:+vol.toFixed(4),y:+avg.toFixed(4),label:code,color:BASE_CURRENCIES[code].color};
+  });
+  const ctx=document.getElementById('scatterChart').getContext('2d');
+  charts.scatter=new Chart(ctx,{type:'scatter',data:{datasets:[{data:points,backgroundColor:points.map(p=>p.color+'cc'),pointRadius:8,pointHoverRadius:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2535',titleColor:'#e8eaf0',bodyColor:'#8b91a8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,callbacks:{label:ctx=>{const p=points[ctx.dataIndex];return`${p.label}: vol=${p.x}, avg=${p.y>0?'+':''}${p.y}%`}}}},scales:{x:{grid:{color:gridColor},title:{display:true,text:'Volatillik',color:'#555e75',font:{size:10}}},y:{grid:{color:gridColor},title:{display:true,text:"O'rtacha %",color:'#555e75',font:{size:10}}}}}});
+}
+
+function buildWaterfallChart(){
+  destroyChart('waterfall');
+  const cData=DB.data[currentCcy].slice(-currentRange);
+  let cumulative=0;
+  const vals=cData.map(d=>{cumulative+=d.d;return+cumulative.toFixed(0);});
+  const color=BASE_CURRENCIES[currentCcy].color;
+  const ctx=document.getElementById('waterfallChart').getContext('2d');
+  charts.waterfall=new Chart(ctx,{type:'line',data:{labels:DB.dates.slice(-currentRange).map(d=>d.slice(5)),datasets:[{data:vals,borderColor:cumulative>=0?'#34d399':'#f87171',borderWidth:2,fill:true,backgroundColor:cumulative>=0?'rgba(52,211,153,0.1)':'rgba(248,113,113,0.1)',tension:.4,pointRadius:0}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:ctx=>`Kumulyativ: ${ctx.parsed.y>0?'+':''}${ctx.parsed.y.toLocaleString()} UZS`}}}}});
+}
+
+// ═══════════════════════════════════════════
+// KPI + TABLE + VOLATILITY
+// ═══════════════════════════════════════════
+function updateKPI(){
+  const d=DB.data[currentCcy];
+  const last=d[d.length-1];
+  const prev=d[d.length-2]||last;
+  const w7=d[Math.max(0,d.length-7)];
+  const w30=d[Math.max(0,d.length-30)];
+  const allR=d.slice(-currentRange).map(x=>x.r);
+  const min=Math.min(...allR),max=Math.max(...allR);
+
+  document.getElementById('kpiRate').textContent=last.r.toLocaleString();
+  const diff=last.d;const pct=last.p;
+  const badge=document.getElementById('kpiBadge');
+  badge.className='badge '+(pct>0?'up':pct<0?'dn':'neu');
+  badge.textContent=(pct>0?'↑ +':pct<0?'↓ ':'● ')+Math.abs(pct).toFixed(2)+'%';
+  document.getElementById('kpiSub').textContent=(diff>0?'+':'')+diff.toFixed(0)+' UZS';
+
+  const wPct=((last.r-w7.r)/w7.r*100);
+  document.getElementById('kpiWeek').style.color=wPct>=0?'var(--green)':'var(--red)';
+  document.getElementById('kpiWeek').textContent=(wPct>=0?'+':'')+wPct.toFixed(2)+'%';
+  document.getElementById('kpiWeekSub').textContent=(last.r-w7.r>0?'+':'')+Math.round(last.r-w7.r).toLocaleString()+' UZS';
+
+  const mPct=((last.r-w30.r)/w30.r*100);
+  document.getElementById('kpiMonth').style.color=mPct>=0?'var(--green)':'var(--red)';
+  document.getElementById('kpiMonth').textContent=(mPct>=0?'+':'')+mPct.toFixed(2)+'%';
+  document.getElementById('kpiMonthSub').textContent=(last.r-w30.r>0?'+':'')+Math.round(last.r-w30.r).toLocaleString()+' UZS';
+
+  document.getElementById('kpiRange').textContent=Math.round(min).toLocaleString()+' – '+Math.round(max).toLocaleString();
+  document.getElementById('kpiRangeSub').textContent='Min – Maks ('+currentRange+' kun)';
+
+  const trend=document.getElementById('lineTrend');
+  trend.className='badge '+(wPct>=0?'up':'dn');
+  trend.textContent=wPct>=0?'↑ Trend':'↓ Trend';
+}
+
+function updateTable(){
+  const tbody=document.getElementById('tableBody');
+  const codes=Object.keys(BASE_CURRENCIES);
+  tbody.innerHTML=codes.map(code=>{
+    const d=DB.data[code];
+    const last=d[d.length-1];
+    const w7=d[Math.max(0,d.length-7)];
+    const wPct=((last.r-w7.r)/w7.r*100);
+    const allR=d.slice(-currentRange).map(x=>x.r);
+    const min=Math.min(...allR),max=Math.max(...allR);
+    const barPct=max>min?((last.r-min)/(max-min)*100).toFixed(0):50;
+    const color=BASE_CURRENCIES[code].color;
+    return`<tr onclick="selectCurrency('${code}')" ${code===currentCcy?'class="selected"':''}>
+      <td><div class="cur-cell"><span class="cur-flag">${BASE_CURRENCIES[code].flag}</span><div><div class="cur-code">${code}</div><div class="cur-name">${getName(code).slice(0,18)}</div></div></div></td>
+      <td class="rate-val">${last.r.toLocaleString()}</td>
+      <td><span class="badge ${last.p>=0?'up':'dn'}">${last.p>=0?'↑ +':'↓ '}${Math.abs(last.p).toFixed(2)}%</span></td>
+      <td style="color:${wPct>=0?'var(--green)':'var(--red)'};font-family:var(--mono);font-size:12px">${wPct>=0?'+':''}${wPct.toFixed(2)}%</td>
+      <td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${barPct}%;background:${color}"></div></div></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateVolatility(){
+  const codes=Object.keys(BASE_CURRENCIES);
+  const vols=codes.map(code=>{
+    const d=DB.data[code].slice(-30);
+    const v=Math.sqrt(d.map(x=>x.p*x.p).reduce((a,b)=>a+b,0)/d.length);
+    return{code,v,color:BASE_CURRENCIES[code].color};
+  }).sort((a,b)=>b.v-a.v);
+  const maxV=vols[0].v;
+  document.getElementById('volatilityBars').innerHTML=vols.map(({code,v,color})=>`
+    <div class="trend-row">
+      <span class="trend-name">${code}</span>
+      <div class="trend-bar-wrap"><div class="trend-bar-inner" style="width:${(v/maxV*100).toFixed(0)}%;background:${color}80"></div></div>
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text2);min-width:36px;text-align:right">${v.toFixed(3)}%</span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// UI CONTROLS
+// ═══════════════════════════════════════════
+function buildPills(){
+  const codes=Object.keys(BASE_CURRENCIES);
+  document.getElementById('currencyPills').innerHTML=codes.map(code=>`
+    <button class="pill ${code===currentCcy?'active':''}" onclick="selectCurrency('${code}')">${BASE_CURRENCIES[code].flag} ${code}</button>
+  `).join('');
+}
+
+function selectCurrency(code){
+  currentCcy=code;buildPills();updateKPI();updateTable();
+  buildLineChart();buildBarChart();buildAreaChart();buildMonthChart();buildWaterfallChart();
+}
+
+function setRange(n){
+  currentRange=n;
+  ['r7','r30','r60','r128'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const map={7:'r7',30:'r30',60:'r60',128:'r128'};
+  document.getElementById(map[n]||'r30')?.classList.add('active');
+  rebuildAll();
+}
+
+function setLang(lang){
+  currentLang=lang;
+  document.querySelectorAll('.lang-btn').forEach(b=>{b.classList.toggle('active',b.textContent===lang.toUpperCase())});
+  updateTexts();updateTable();
+}
+
+function updateTexts(){
+  const keys=['appTitle','appSub','lblCurrency','lblPeriod','kpi1Label','kpi2Label','kpi3Label','kpi4Label',
+    'lineTitle','lineSub','donutTitle','donutSub','barTitle','barSub','compareTitle','compareSub',
+    'tableTitle','thCurrency','thRate','thChange','thWeek','thBar','volTitle','volSub','areaTitle',
+    'monthTitle','scatterTitle','waterfallTitle'];
+  const map={kpi1Label:'kpi1',kpi2Label:'kpi2',kpi3Label:'kpi3',kpi4Label:'kpi4'};
+  keys.forEach(key=>{const el=document.getElementById(key);if(el)el.textContent=t(map[key]||key);});
+  document.getElementById('r7').textContent=t('r7');
+  document.getElementById('r30').textContent=t('r30');
+  document.getElementById('r60').textContent=t('r60');
+  document.getElementById('r128').textContent=t('rAll');
+}
+
+function refreshData(){
+  document.getElementById('lastUpdate').textContent=t('updated')+' '+new Date().toLocaleTimeString();
+  rebuildAll();
+}
+
+function rebuildAll(){
+  updateKPI();updateTable();updateVolatility();
+  buildLineChart();buildDonutChart();buildBarChart();buildCompareChart();buildAreaChart();buildMonthChart();buildScatterChart();buildWaterfallChart();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+window.addEventListener('load',()=>{
+  updateTexts();buildPills();rebuildAll();
+  document.getElementById('lastUpdate').textContent=t('updated')+' '+new Date().toLocaleTimeString();
+});
+</script>
+</body>
+</html>
